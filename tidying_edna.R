@@ -60,7 +60,24 @@ dna_all$pos_new <- ifelse(dna_all$pos == "4/4", 1.0,
 
 
 
+
+
 #join dna_all with dat for spatial information
+geo <- st_read("raw_data/EDNA.shp")
+geo <- geo %>% 
+  select(-1) %>% 
+  rename("site" = "Site_Type")
+geo$site <- ifelse(geo$site == "MLB01", "MLB001",
+                          ifelse(geo$site == "MLB02", "MLB002",
+                                 ifelse(geo$site == "MLB03", "MLB003",
+                                        ifelse(geo$site == "MLB04", "MLB004",
+                                               ifelse(geo$site == "MLB05", "MLB005", geo$site)))))
+
+#test to see which sites do not have corresponding spatial information
+test <- dna_all %>% 
+  filter(!site %in% geo$site) #THBT03
+
+
 dat <- left_join(dat, dna_all, by = "site")
 
 
