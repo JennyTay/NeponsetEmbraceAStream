@@ -7,34 +7,11 @@ library(ggplot2)
 
 
 
-#temperature
-
-#first combine the THB001 and THBT01 files for june and july (they are currently separate)
-jun <- read_excel("raw_data/temperature/THBT01 2021-06-19 12_06_23 -0400.xlsx", skip = 1)
-jul <-read_excel("raw_data/temperature/THBT01 2021-07-17 12_01_17 -0400.xlsx", skip = 1)
-
-comb <- rbind(jun, jul)
-write.csv(comb, file = "raw_data/temperature/THBT01 2021-07-17 12_01_17 -0400.csv")
-
-#then I went in and manually deleted the original files
-
-jun <- read_excel("raw_data/temperature/THB001 2021-06-19 11_10_04 -0400.xlsx", skip = 1)
-jul <- read_excel("raw_data/temperature/THB001 2021-07-17 11_03_38 -0400.xlsx", skip = 1)
-
-comb <- rbind(jun, jul)
-write.csv(comb, file = "raw_data/temperature/THB001 2021-07-17 11_03_38 -0400.csv")
-
-#then I went in and manually deleted the original files
-
-
-#then i manunally renamed THB005 and THB006 in the 2021 files- these two labels need to be switched( I only did this is my temperature folder, I did not do this in the orginal files uploaded by declan)
-#I didnt rename in the file itself because I skip this line when reading in the files
+#read in data
 
 
 
-#mad a second folder with the csv's because some files were saved as .xlsx and others were .csv so will need to run the follow list.files and loop twice for each folder.
-
-#notes
+#temperature 2020
 #need to add in Purgatory brook - there was no 'final' file that had combined the months so I skipped it for now
 # also need to confirm what data is erroneous and what is correct - i removed the first couple rows but not sure about the last
 
@@ -65,12 +42,71 @@ for (i in 1:length(tmpfiles)){
 }
 
 
+
+
+
+
+#temperature 2021 - I manually edited some of the excel spread sheets so that they had the same number of rows and columns to skip, select out.
+
+
+#first combine the THB001 and THBT01 files for june and july (they are currently separate) - only need to do this again If I put new versions of these files in the folder
+# jun <- read_excel("raw_data/temperature2021/THBT01 2021-06-19 12_06_23 -0400.xlsx", skip = 1)
+# jul <-read_excel("raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.xlsx", skip = 1)
+# 
+# comb <- rbind(jun, jul)
+# write.csv(comb, file = "raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.csv")
+# 
+# #then I went in and manually deleted the original files
+# 
+# jun <- read_excel("raw_data/temperature2021/THB001 2021-06-19 11_10_04 -0400.xlsx", skip = 1)
+# jul <- read_excel("raw_data/temperature2021/THB001 2021-07-17 11_03_38 -0400.xlsx", skip = 1)
+# 
+# comb <- rbind(jun, jul)
+# write.csv(comb, file = "raw_data/temperature2021/THB001 2021-07-17 11_03_38 -0400.csv")
+
+#then I went in and manually deleted the original files
+#manually re save the csv's as xlsx so all the same file types
+
+#manually renamed THB005 and THB006 in the 2021 files- these two labels need to be switched( I only did this is my temperature folder, I did not do this in the orginal files uploaded by declan)
+#I didnt rename in the file itself because I skip this line when reading in the files
+
+
+tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2021", sep = "/"), recursive = T, full.names = T)
+sites <- substr(tmpfiles, 142, 147)
+
+
+#this loop isnt working because the column names in the files starting at 18 are different....
+
+temps21 <- NULL
+
+for (i in 1:length(tmpfiles)){
+  df <- read_excel(tmpfiles[i], skip = 1, sheet=1, col_names = TRUE) %>%  #well will skip the first three rows and just get the data
+    dplyr::select(contains(c("Date", "Temp"))) %>%
+    mutate(site = sites[i])
+  
+  names(df)[1:2] <-  c("Date", "Temp_F")
+  
+  df <- df %>% 
+    mutate(Temp_C = (Temp_F - 32)*(5/9))
+  
+  temps21 <- rbind(temps21, df)
+  
+  print(i)
+}
+
+
+
+
+
+
+
+
 ggplot(data = temps, mapping = aes(x = Date, y = Temp_C))+
   geom_line()+
   facet_wrap( ~ site, nrow = 5)
 
 
-temps$season <- ifelse(month(temps$Date)%in% c(6,7,8), "warm", "cool")
+temps$season <- ifelse(month(temps$Date)%in% c(3:5), "spring", "summer")
 
 
 #calculate daily max, mean, and min
