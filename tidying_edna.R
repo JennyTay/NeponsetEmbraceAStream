@@ -52,10 +52,10 @@ dna_all <- left_join(dat, dna, by = c("site", "year"))
 #first add all the other eDNA sites to the dna dataframe with 0 for occurrence
 dna_all$occurrence[is.na(dna_all$occurrence)] <- 0
 dna_all$species <- "brook trout"
-dna_all$pos_new <- ifelse(dna_all$pos == "4/4", 1.0,
-                      ifelse(dna_all$pos == "3/4", 0.75,
-                             ifelse(dna_all$pos == "2/4", 0.50,
-                                    ifelse(dna_all$pos == "1/4", 0.25, 0))))
+dna_all$pos_new <- ifelse(dna_all$pos == "4/4", 100,
+                      ifelse(dna_all$pos == "3/4", 75,
+                             ifelse(dna_all$pos == "2/4", 50,
+                                    ifelse(dna_all$pos == "1/4", 25, 0))))
 
 dna_all$pos[is.na(dna_all$pos)] <- 0
 dna_all$pos_new[is.na(dna_all$pos_new)] <- 0
@@ -121,4 +121,5 @@ dna_all <- left_join(geo, dna_all, by = "site")
 final <- as(dna_all, "Spatial")
 shapefile(final, file = "eDNA_results.shp", overwrite = TRUE)
 
-edna <- st_read("eDNA_spring2020_neponset.shp")
+edna <- st_read("eDNA_results.shp")
+st_crs(edna)
