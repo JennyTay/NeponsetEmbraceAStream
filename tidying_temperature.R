@@ -16,6 +16,16 @@ library(ggplot2)
 # also need to confirm what data is erroneous and what is correct - i removed the first couple rows but not sure about the last
 
 
+#in 2020 the temperature logger ID's do not align with the eDNA IDs so i did a spatial join in ArcMAP and renamed the 2020 temp loggers to have corresponding eDNA IDs
+#read in the new file and save a conversion table (loggerID with siteID)
+dat <- st_read("raw_data/2020TempLogger_correctID.shp")
+dat <- dat %>% 
+  dplyr::select(LogID, site) %>% 
+  filter(LogID != "PTB004") #remove this one becaus the closest eDNA site has a different logger that is closer to it.
+final <- as(dat, "Spatial")
+shapefile(final, file = "2020TempLogID_eDNAsite_convsersion.shp", overwrite = TRUE)
+
+
 
 tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2020", sep = "/"), recursive = T, full.names = T)
 sites <- substr(tmpfiles, 142, 147)
@@ -43,8 +53,7 @@ for (i in 1:length(tmpfiles)){
 
 
 
-
-
+ 
 
 #temperature 2021 - I manually edited some of the excel spread sheets so that they had the same number of rows and columns to skip, select out.
 
