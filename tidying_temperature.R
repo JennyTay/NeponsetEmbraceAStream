@@ -20,7 +20,8 @@ library(ggplot2)
 #read in the new file and save a conversion table (loggerID with siteID)
 dat <- st_read("raw_data/2020TempLogger_correctID.shp")
 dat <- dat %>% 
-  dplyr::select(LogID, site) %>% 
+  dplyr::select(LogID, site_1) %>% 
+  rename(site = "site_1") %>% 
   filter(LogID != "PTB004") #remove this one becaus the closest eDNA site has a different logger that is closer to it.
 final <- as(dat, "Spatial")
 shapefile(final, file = "2020TempLogID_eDNAsite_convsersion.shp", overwrite = TRUE)
@@ -28,8 +29,8 @@ shapefile(final, file = "2020TempLogID_eDNAsite_convsersion.shp", overwrite = TR
 
 
 tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2020", sep = "/"), recursive = T, full.names = T)
-sites <- substr(tmpfiles, 142, 147)
-sites <- gsub(" ", "", sites)
+logid <- substr(tmpfiles, 142, 147)
+logid <- gsub(" ", "", logid)
 
 
 #this loop isnt working because the column names in the files starting at 18 are different....
@@ -39,7 +40,7 @@ temps <- NULL
 for (i in 1:length(tmpfiles)){
   df <- read_excel(tmpfiles[i], skip = 2, sheet = 3, col_names = FALSE) %>%  #first row is notes, second row is meter error
     dplyr::select(2:3) %>%
-    mutate(site = sites[i])
+    mutate(LogID = logid[i])
   
   names(df)[1:2] <-  c("Date", "Temp_F")
   
@@ -51,9 +52,23 @@ for (i in 1:length(tmpfiles)){
   print(i)
 }
 
+temps$LogID[temps$LogID == "THB01"] <- "THB001"
+temps$LogID[temps$LogID == "THB02"] <- "THB002"
+temps$LogID[temps$LogID == "THB03"] <- "THB003"
+temps$LogID[temps$LogID == "THB04"] <- "THB004"
+temps$LogID[temps$LogID == "THB06"] <- "THB006"
+temps$LogID[temps$LogID == "BEB01"] <- "BEB001"
+temps$LogID[temps$LogID == "BEB02"] <- "BEB002"
+temps$LogID[temps$LogID == "BEB03"] <- "BEB003"
+temps$LogID[temps$LogID == "BEB04"] <- "BEB004"
 
+#join to conversion table to get the proper 'site
 
- 
+temps <- temps %>% 
+  left_join(dat, by = "LogID") %>% 
+  filter(!is.na(site)) %>% 
+  dplyr::select(Date, Temp_C, site)
+
 
 #temperature 2021 - I manually edited some of the excel spread sheets so that they had the same number of rows and columns to skip, select out.
 
@@ -96,7 +111,8 @@ for (i in 1:length(tmpfiles)){
   names(df)[1:2] <-  c("Date", "Temp_F")
   
   df <- df %>% 
-    mutate(Temp_C = (Temp_F - 32)*(5/9))
+    mutate(Temp_C = (Temp_F - 32)*(5/9)) %>% 
+    dplyr::select(-Temp_F)
   
   temps21 <- rbind(temps21, df)
   
@@ -106,6 +122,12 @@ for (i in 1:length(tmpfiles)){
 
 
 
+# Rbind temps and temps21 so we all the temperature data together
+
+names(temps)
+names(temps21)
+
+temps <- rbind(temps, temps21)
 
 
 
