@@ -3,9 +3,8 @@ library(readxl)
 library(tidyverse)
 library(stringr)
 library(lubridate)
-library(ggplot2)
-
-
+library(sf)
+library(sp)
 
 #read in data
 
@@ -95,6 +94,8 @@ temps <- temps %>%
 #I didnt rename in the file itself because I skip this line when reading in the files
 
 
+#manunally removed the erroneisou data at the start of THB005 and THB006
+
 tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2021", sep = "/"), recursive = T, full.names = T)
 sites <- substr(tmpfiles, 142, 147)
 
@@ -138,6 +139,9 @@ ggplot(data = temps, mapping = aes(x = Date, y = Temp_C))+
 
 
 temps$season <- ifelse(month(temps$Date)%in% c(3:5), "spring", "summer")
+
+temps <- temps %>% 
+  filter(!is.na(Temp_C))
 
 
 #calculate daily max, mean, and min
@@ -232,37 +236,51 @@ test <- test %>%
 
 #calculate time interval for each site
 int <- temps %>% 
-  group_by(site) %>% 
-  summarize(int = Date[4] - Date[3],
-            int2 = Date[400] - Date[399])
+  mutate(year = year(Date)) %>% 
+  unite(yearsite, year, site, sep = "_") %>% 
+  group_by(yearsite) %>% 
+  summarize(int = (Date[4] - Date[3])/60,
+            int2 = (Date[400] - Date[399])/60)
 
-min15 <- int$site[int$int >=15]
-min10 <- int$site[int$int ==10]
-min1 <- int$site[int$int ==1]
+min15 <- int$yearsite[int$int %in% c(0,15)]
+min10 <- int$yearsite[int$int == 10]
+
 
 #calculate duration of time (hrs) that water T is greater than 20, 25, and 28.3
 
 
 
-duration <- temps %>% 
-  group_by(site, season) %>% 
+duration <- temps  %>% 
+  mutate(year = year(Date)) %>%  
+  unite(yearsite, year, site, sep = "_") %>%  
+  group_by(yearsite, season) %>% 
   mutate(
-    wat_grt20 = ifelse(site %in% min15, (sum(Temp_C>20)*15/60),
-                       ifelse (site %in% min10, (sum(Temp_C>20)*10/60),
+    wat_grt20 = ifelse(yearsite %in% min15, (sum(Temp_C>20)*15/60),
+                       ifelse (yearsite %in% min10, (sum(Temp_C>20)*10/60),
                                (sum(Temp_C>20)/60)))
   )
+
+
 duration <- duration %>% 
-  group_by(site, season) %>% 
+  group_by(yearsite, season) %>% 
   mutate(
-    wat_grt25 = ifelse(site %in% min15, (sum(Temp_C>25)*15/60),
-                       ifelse (site %in% min10, (sum(Temp_C>25)*10/60),
+    wat_grt15 = ifelse(yearsite %in% min15, (sum(Temp_C>15)*15/60),
+                       ifelse (yearsite %in% min10, (sum(Temp_C>15)*10/60),
+                               (sum(Temp_C>15)/60)))
+  )
+
+duration <- duration %>% 
+  group_by(yearsite, season) %>% 
+  mutate(
+    wat_grt25 = ifelse(yearsite %in% min15, (sum(Temp_C>25)*15/60),
+                       ifelse (yearsite %in% min10, (sum(Temp_C>25)*10/60),
                                (sum(Temp_C>25)/60)))
   )
 duration <- duration %>% 
-  group_by(site, season) %>% 
+  group_by(yearsite, season) %>% 
   mutate(
-    wat_grt283 = ifelse(site %in% min15, (sum(Temp_C>28.3)*15/60),
-                        ifelse (site %in% min10, (sum(Temp_C>28.3)*10/60),
+    wat_grt283 = ifelse(yearsite %in% min15, (sum(Temp_C>28.3)*15/60),
+                        ifelse (yearsite %in% min10, (sum(Temp_C>28.3)*10/60),
                                 (sum(Temp_C>28.3)/60)))
   )
 
@@ -272,7 +290,10 @@ duration <- duration %>%
 duration <- duration %>% 
   mutate(year = year(Date),
          month = month(Date),
-         day = day(Date))
+         day = day(Date)) %>% 
+  separate(yearsite, into = c("yeardelete", "site"), sep = "_") %>% 
+  select(-yeardelete) %>% 
+  filter(!is.na(Temp_C)) 
 
 
 test <- test %>% 
@@ -284,11 +305,12 @@ test <- test %>%
 #calculate the max 7-day max, mean 7-day mean, min 7-day min, max 7-day mean, max 7-day range
 
 metrics <- test %>% 
-  group_by(site, season) %>% 
+  group_by(year, site, season) %>% 
   summarise(max7max = max(SevDayMaxWat, na.rm = T),
             avg7max = mean(SevDayMaxWat, na.rm = T),
             min7min = min(SevDayMinWat, na.rm = T),
             max7avg = max(SevDayMeanWat, na.rm = T),
+            grt15 = unique(wat_grt15),
             grt20 = unique(wat_grt20),
             grt25 = unique(wat_grt25),
             grt283 = unique(wat_grt283)
@@ -296,7 +318,7 @@ metrics <- test %>%
 
 
 #save
-save(metrics, file = 'StrmTempMetrics_EAS_2020.RData')
+save(metrics, file = 'StrmTempMetrics_2020_2021.RData')
 load('StrmTempMetrics_EAS_2020.RData')
 
 save(temps, file = "StrnTemp_EAS_2020.RData")
