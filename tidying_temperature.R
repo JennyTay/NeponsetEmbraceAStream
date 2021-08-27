@@ -94,7 +94,7 @@ temps <- temps %>%
 #I didnt rename in the file itself because I skip this line when reading in the files
 
 
-#manunally removed the erroneisou data at the start of THB005 and THB006
+#manunally removed the erroneisou data at the start of THB005, THB006, BEB001, MLB001
 
 tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2021", sep = "/"), recursive = T, full.names = T)
 sites <- substr(tmpfiles, 142, 147)
@@ -319,6 +319,6 @@ metrics <- test %>%
 
 #save
 save(metrics, file = 'StrmTempMetrics_2020_2021.RData')
-load('StrmTempMetrics_EAS_2020.RData')
+load('StrmTempMetrics_2020_2021.RData')
 
 save(temps, file = "StrnTemp_EAS_2020.RData")

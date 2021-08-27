@@ -49,3 +49,5 @@ ggplot() +
 st_crs(d)
 final <- as(d, "Spatial")
 shapefile(final, file = "MassWildlife_EAS_combined_results.shp", overwrite = TRUE)
+
+bio <- st_read("MassWildlife_EAS_combined_results.shp")

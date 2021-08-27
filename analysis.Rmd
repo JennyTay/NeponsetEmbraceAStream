@@ -1,0 +1,59 @@
+---
+title: "Analysis"
+author: "Jennifer Rogers"
+date: "8/23/2021"
+output: html_document
+---
+ 
+ in this script we combine the biolgoical data with the temperature data and with the habitat data
+
+
+```{r}
+library(sf)
+library(tidyverse)
+library(corrplot)
+library(RColorBrewer)
+```
+
+here we summarize the bio data
+
+```{r}
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+
+
+
+
+
+
+```
+
+
+Here we join the bio data with the temperature data and use a regression model to predict which sites should have trout based on temperature
+```{r}
+
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+temp <- load("StrmTempMetrics_2020_2021.RData")
+
+dat <- left_join(bio, metrics, by = c("site", "season")) %>% 
+  filter(!is.na(site),
+         !is.na(max7max),
+         !is.na(date))
+
+#correlations between temperature variables
+m <- data.frame(dat) %>% 
+  select(9:16)
+m <- cor(m)
+corrplot(m, type="upper", order="hclust", method = "number",
+         col=brewer.pal(n=8, name="RdYlBu"))
+
+
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = grt283))+
+  geom_boxplot()
+
+#binomial regression
+summary(glm(occurrence ~ max7max + grt283, family="binomial", data = dat))
+
+
+
+```
+
