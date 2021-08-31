@@ -20,6 +20,18 @@ here we summarize the bio data
 ```{r}
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
 
+#what streams were sampled and when
+strms <- bio %>% 
+  filter(source == "EAS") 
+strms$stream <- gsub("([^A-Za-z])+", "", x = strms$site)
+unique(strms$stream) #"MLB"  "BEBT" "BEB"  "POB"  "THB"  "GEB"  "GEBT" "PUBT" "PUB"  "PTB"  "PTBT" "MMB"  "MMBT" "THBT"
+
+
+table(strms$stream, strms$season)
+
+
+
+
 
 
 

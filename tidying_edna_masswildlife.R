@@ -1,13 +1,13 @@
 #we combine the two sets of species data
 #we want the date, species, occurrence, and location (either waterbody or site)
-#in the masswildlife data we call the count pos_new because in the eDNA data pos_new is how many replicates were positive.  THey are both meant to describe the population size observed
 
-
+library(lubridate)
 
 edna <- st_read("eDNA_results.shp")
 edna <- edna %>% 
   dplyr::select(site, date, species, pos_new, occurrence) %>% 
-  mutate(source = "EAS")
+  mutate(source = "EAS",
+         count = NA)
 
 
 
@@ -27,11 +27,12 @@ test$lctn_ds[137:155]<- "Off Moose Hill Rd2" #need to edit location description 
 
 test <- test%>%  
   group_by(species, site,date, lctn_ds) %>% 
-  summarise(pos_new = n()) %>% 
+  summarise(count = n()) %>% 
   ungroup() %>% 
   mutate(occurrence = 1,
          site = paste(site, lctn_ds, sep = " "),
-         source = "MassWildlife") %>% 
+         source = "MassWildlife",
+         pos_new=NA) %>% 
   dplyr::select(-lctn_ds)
 
 d <- rbind(test, edna)
