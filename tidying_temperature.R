@@ -1,4 +1,5 @@
 
+
 library(readxl)
 library(tidyverse)
 library(stringr)
@@ -322,3 +323,4 @@ save(metrics, file = 'StrmTempMetrics_2020_2021.RData')
 load('StrmTempMetrics_2020_2021.RData')
 
 save(temps, file = "StrnTemp_EAS_2020.RData")
+load('StrnTemp_EAS_2020.RData')

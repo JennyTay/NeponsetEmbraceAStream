@@ -13,16 +13,26 @@ library(sf)
 library(tidyverse)
 library(corrplot)
 library(RColorBrewer)
+library(lubridate)
 ```
 
 here we summarize the bio data
 
 ```{r}
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio$date <- ymd(bio$date)
 
 #what streams were sampled and when
 strms <- bio %>% 
-  filter(source == "EAS") 
+  filter(source == "EAS") %>% 
+  mutate(stream = gsub("([^A-Za-z])+", "", x = site)) %>%
+  data.frame() %>% 
+  group_by(season, stream) %>% 
+  summarise(count = n()) %>% 
+  pivot_wider(names_from = season, values_from = count)
+write.csv(strms, file = "final_figs_tables/sites.csv")
+
+
 strms$stream <- gsub("([^A-Za-z])+", "", x = strms$site)
 unique(strms$stream) #"MLB"  "BEBT" "BEB"  "POB"  "THB"  "GEB"  "GEBT" "PUBT" "PUB"  "PTB"  "PTBT" "MMB"  "MMBT" "THBT"
 
@@ -31,14 +41,42 @@ table(strms$stream, strms$season)
 
 
 
+#what streams preiovusly had been identified as having 
 
-
-
+dat <- dat %>% 
+  filter(cmmn_nm =="Brown Trout") %>% 
+  select(watrbdy, smpl_dt, cmmn_nm) %>% 
+  unique()
 
 
 
 ```
 
+
+In this chunk, we describe the temperature data
+```{r}
+
+load('StrnTemp_EAS_2020.RData')
+temps <- temps %>% 
+  mutate(year = year(Date)) %>% 
+  group_by(site, year) %>% 
+  summarise(min = min(Date), 
+            max = max(Date)) %>% 
+  ungroup() %>% 
+  mutate(min = substr(min, 0, 10),
+         max = substr(max, 0, 10)) %>% 
+  unite(col = "range", min, max, sep = " - " ) %>% 
+  pivot_wider(names_from = year, values_from = range)
+
+
+```
+
+We describe the culvert data
+```{r}
+shapefile("culvert.shp")
+unique(final$Stream)
+
+```
 
 Here we join the bio data with the temperature data and use a regression model to predict which sites should have trout based on temperature
 ```{r}

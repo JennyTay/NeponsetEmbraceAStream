@@ -6,7 +6,7 @@ library(rgdal)
 library(raster)
 
 
-dat <- read_excel("raw_data/Culvert Scoring.xlsx", sheet= 2) %>% 
+dat <- read_excel("raw_data/CulvertScoring.xlsx", sheet= 2) %>% 
   select(1:32)
 
 #make this into a shapefile

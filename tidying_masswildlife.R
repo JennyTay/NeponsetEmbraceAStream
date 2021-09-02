@@ -13,6 +13,8 @@ dat$year <- year(dat$sample_date)
 dat$month <- month(dat$sample_date)
 table(dat$year)
 unique(dat$month)
+unique(dat$method)
+unique(dat$waterbody)
 
 #make shapefile
 
@@ -32,6 +34,8 @@ ggplot() +
 
 final <- as(dat2, "Spatial")
 shapefile(final, file = "MassWildlife_results.shp", overwrite = TRUE)
+
+
 
 
 
