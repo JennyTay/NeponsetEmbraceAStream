@@ -6,6 +6,7 @@ library(stringr)
 library(lubridate)
 library(sf)
 library(sp)
+library(xlsx)
 
 #read in data
 
@@ -72,8 +73,17 @@ temps <- temps %>%
 
 #temperature 2021 - I manually edited some of the excel spread sheets so that they had the same number of rows and columns to skip, select out.
 
+#POB002
+jun <- read.csv("raw_data/temperature2021/POB002 2021-06-18 10_13_49 -0400.csv", skip = 2) %>% 
+  dplyr::select(1:2)
+names(jun) <- c("date", "tempF")
+sep <- read_excel("raw_data/temperature2021/POB002 2021-09-03 15_06_29 -0400.xlsx", skip = 1) %>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+POB002 <- rbind(jun, sep)
+write.xlsx(POB002, file = "raw_data/temperature2021/final/POB002.xlsx")
 
-#first combine the THB001 and THBT01 files for june and july (they are currently separate) - only need to do this again If I put new versions of these files in the folder
+#first combine the THB001 and THBT01 files for june and july (they are currently separate) 
 # jun <- read_excel("raw_data/temperature2021/THBT01 2021-06-19 12_06_23 -0400.xlsx", skip = 1)
 # jul <-read_excel("raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.xlsx", skip = 1)
 # 
