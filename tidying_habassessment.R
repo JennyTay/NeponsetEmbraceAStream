@@ -8,27 +8,28 @@ library(lubridate)
 
 
 
-df <- read.csv("raw_data/HA_HabUnit_0811201.csv")
+df <- read.csv("raw_data/HabitatUnitInfo_1.csv")
 
 #remove test rows
 dat <- df %>% 
   filter(!Creator == "neponset",
-         !Crew_HU == "test2") %>% 
-  dplyr::select(5:23) %>% 
-  separate(CreationDate, into = c("date", "time"), sep = " ") %>% 
+         !Crew_HU == "test2",
+         !HU.Comment..free.text. == "training, incomplete",
+         !SiteID_HU == "GEB001") %>%  #only one visit and they only recorded one habitat unit - erroneously 
+  dplyr::select(c(3,5:21)) %>% 
+  separate(Date_HU, into = c("date", "time"), sep = " ") %>% 
   mutate(date = mdy(date)) %>% 
-  dplyr::select(-c(18,20)) %>% 
+  dplyr::select(-time) %>% 
   mutate(depth_cm = ifelse(Depth.Max..nearest.0.01m.<=1.5, Depth.Max..nearest.0.01m.*100, 
                            ifelse(Depth.Max..nearest.0.01m. >1.5 & Depth.Max..nearest.0.01m. <=7, Depth.Max..nearest.0.01m.*10,
                                   Depth.Max..nearest.0.01m.)),
          depth_cm = ifelse(depth_cm<0, abs(depth_cm), depth_cm),
          SiteID_HU = toupper(SiteID_HU),
          month = month(date)) %>% 
-  dplyr::select(-Depth.Max..nearest.0.01m.) %>% 
-  filter(-site == "GEB001") #only one visit and they only recorded one habitat unit - erroneously 
+  dplyr::select(-Depth.Max..nearest.0.01m.) 
 
-names(dat)[1:17] <- c("site", "crew", "habitat", "start_position_m", "end_position_m", "length_m", "split_channel", "vel", 
-                "wetted_width_m", "pool_feature", "LWD", "dom_sub", "subdom_sub", "canopy_cov_perc", "instream_cov", "notes", "date")
+names(dat)[2:17] <- c("site", "crew", "habitat", "start_position_m", "end_position_m", "length_m", "split_channel", "vel", 
+                "wetted_width_m", "pool_feature", "LWD", "dom_sub", "subdom_sub", "canopy_cov_perc", "instream_cov", "notes")
 
 #reorder columns so that site and date come first
 dat <- dat %>% 
@@ -39,16 +40,40 @@ dat$site[dat$site == "MOB007.5"] <- "MMB007.5"
 dat$site[dat$site == "THB 005"] <- "THB005"
 dat$site[dat$site == "PBT004"] <- "PTB004"
 dat$site[dat$site == "POB001"] <- "BEB001" #this was figured out because the reach end positions are the same
-dat$site[dat$site == "Bev001"] <- "BEB001"
+dat$site[dat$site == "BEV001"] <- "BEB001"
 dat$site[dat$site == "Beb 1"] <- "BEB001"
-dat$site <- ifelse(dat$date == mdy(06-21-2021) & dat$site == PTB005, PTB004, dat$site)
+dat$site[dat$site == "PTB 001"] <- "PTB001"
+dat$site[dat$site == "PTB 004"] <- "PTB004"
+dat$site[dat$site == "BEB1"] <- "BEB001"
+dat$site[dat$site == "GEB 002"] <- "GEB002"
 
+dat$site <- ifelse(dat$date == mdy('6-21-2021') & dat$site == "PTB005", "PTB004", dat$site)
 
+#fix date typos as described by Declan
+dat$date <- as.Date(ifelse(dat$site == "PTB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "PTB004" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "PTB007" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "BEB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "POB003" & dat$date == mdy("6/9/2021"), mdy("5/4/2021"), dat$date), origin = "1970-01-01")
+
+#need t0 update month column with new dates
+dat$month <- month(dat$date)
+
+#delete duplicated entries for BEB003 on Jun 22 - delete the one started at 9:45
 
 dat$wetted_width_m[dat$wetted_width_m == 99] <- NA
 
-#issues: 2 100's for end positin on GEB003 in June
-#what is the deepest depth we consider to be in meters? what about the depths of 2.7 and 3.1?  in THB006 are these m or cm?
+#add a column for the number of unique habitat units per site and per stream
+dat <- dat %>% 
+  group_by(site) %>% 
+  mutate(complexity_site_num = n()) %>% 
+  ungroup() %>% 
+  mutate(stream = substr(site,1,3)) 
+# %>% 
+#   group_by(stream) %>% 
+#   mutate(complexity_strm_num = n()/length(unique(site))) %>% 
+#   ungroup()
+
 
 test <- dat %>% 
   dplyr::select(site, month) %>% 
@@ -74,22 +99,47 @@ ggplot(data = dat, mapping = aes(x = as.factor(site), y = canopy_cov_perc))+
   geom_boxplot()+
   theme(axis.text.x = element_text(angle = 90))
 
-ggplot(data = dat, mapping = aes(x = depth_cm))+
-  geom_bar()+
-  facet_wrap(~month)+
+ggplot(data = dat, mapping = aes(x = as.factor(site), y = complexity_num))+
+  geom_boxplot()+
   theme(axis.text.x = element_text(angle = 90))
 
 
-
+ggplot(data = dat, mapping = aes(x = as.factor(site), y = LWD))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90))
 
 ###############  site data ########################
 
 
-df <- read.csv("raw_data/HA_dat_0811201.csv")
+df <- read.csv("raw_data/Form_1_0.csv")
 
 
 dat <- df %>% 
   filter(!Creator == "neponset",
-         !Editor == "neponset",
          !Crew.Names == "test2",
-         !Crew.Names == "Test")
+         !Crew.Names == "Test") %>% 
+  mutate(site =  toupper(Site.ID),
+         site = str_trim(site, "both"))
+
+#fix site typos
+dat$site[dat$site == "MOB007.5"] <- "MMB007.5"
+dat$site[dat$site == "THB 005"] <- "THB005"
+dat$site[dat$site == "PBT004"] <- "PTB004"
+dat$site[dat$site == "POB001"] <- "BEB001" #this was figured out because the reach end positions are the same
+dat$site[dat$site == "BEV001"] <- "BEB001"
+dat$site[dat$site == "BEB1"] <- "BEB001"
+dat$site[dat$site == "PTB 001"] <- "PTB001"
+dat$site[dat$site == "PTB 004"] <- "PTB004"
+dat$site[dat$site == "GEB 002"] <- "GEB002"
+
+dat$site <- ifelse(dat$date == mdy('6-21-2021') & dat$site == "PTB005", "PTB004", dat$site)
+
+#fix date typos as described by Declan
+dat$date <- as.Date(ifelse(dat$site == "PTB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "PTB004" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "PTB007" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "BEB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
+dat$date <- as.Date(ifelse(dat$site == "POB003" & dat$date == mdy("6/9/2021"), mdy("5/4/2021"), dat$date), origin = "1970-01-01")
+
+#need t0 update month column with new dates
+dat$month <- month(dat$date)
