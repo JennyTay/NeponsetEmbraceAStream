@@ -6,7 +6,8 @@ library(stringr)
 library(lubridate)
 library(sf)
 library(sp)
-library(xlsx)
+library(raster)
+
 
 #read in data
 
@@ -71,60 +72,210 @@ temps <- temps %>%
   dplyr::select(Date, Temp_C, site)
 
 
-#temperature 2021 - I manually edited some of the excel spread sheets so that they had the same number of rows and columns to skip, select out.
+###### temperature 2021 #######
+
+#BEB001
+dat <- read_excel("raw_data/temperature2021/BEB001 2021-07-20 10_25_22 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/BEB001.csv")
+
+#BEB005
+dat <- read_excel("raw_data/temperature2021/BEB005b 2021-08-21 12_21_03 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/BEB005.csv")
 
 #POB002
-jun <- read.csv("raw_data/temperature2021/POB002 2021-06-18 10_13_49 -0400.csv", skip = 2) %>% 
+jun <- read.csv("raw_data/temperature2021/POB002 2021-06-18 10_13_49 -0400.csv", skip = 96) %>% 
   dplyr::select(1:2)
 names(jun) <- c("date", "tempF")
-sep <- read_excel("raw_data/temperature2021/POB002 2021-09-03 15_06_29 -0400.xlsx", skip = 1) %>% 
+jun$date <- ymd_hms(jun$date)
+sep <- read_excel("raw_data/temperature2021/POB002 2021-09-03 15_06_29 -0400.xlsx", skip = 96) %>% 
   dplyr::select(2:3)
 names(sep) <- c("date", "tempF")
 POB002 <- rbind(jun, sep)
-write.xlsx(POB002, file = "raw_data/temperature2021/final/POB002.xlsx")
+write.csv(POB002, file = "raw_data/temperature2021/final/POB002.csv")
 
-#first combine the THB001 and THBT01 files for june and july (they are currently separate) 
-# jun <- read_excel("raw_data/temperature2021/THBT01 2021-06-19 12_06_23 -0400.xlsx", skip = 1)
-# jul <-read_excel("raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.xlsx", skip = 1)
-# 
-# comb <- rbind(jun, jul)
-# write.csv(comb, file = "raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.csv")
-# 
-# #then I went in and manually deleted the original files
-# 
-# jun <- read_excel("raw_data/temperature2021/THB001 2021-06-19 11_10_04 -0400.xlsx", skip = 1)
-# jul <- read_excel("raw_data/temperature2021/THB001 2021-07-17 11_03_38 -0400.xlsx", skip = 1)
-# 
-# comb <- rbind(jun, jul)
-# write.csv(comb, file = "raw_data/temperature2021/THB001 2021-07-17 11_03_38 -0400.csv")
+#POB003
+jun <- read.csv("raw_data/temperature2021/POB003 2021-06-18 11_49_21 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jun) <- c("date", "tempF")
+jun$date <- ymd_hms(jun$date)
+sep <- read_excel("raw_data/temperature2021/POB003 2021-09-03 09_20_21 -0400.xlsx", skip = 96) %>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+POB003 <- rbind(jun, sep)
+write.csv(POB003, file = "raw_data/temperature2021/final/POB003.csv")
 
-#then I went in and manually deleted the original files
-#manually re save the csv's as xlsx so all the same file types
+#POB005
+dat <- read_excel("raw_data/temperature2021/POB005 2021-09-01 08_38_42 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/POB005.csv")
 
-#manually renamed THB005 and THB006 in the 2021 files- these two labels need to be switched( I only did this is my temperature folder, I did not do this in the orginal files uploaded by declan)
-#I didnt rename in the file itself because I skip this line when reading in the files
+#POB006
+dat <- read_excel("raw_data/temperature2021/POB006 2021-08-30 12_16_01 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/POB006.csv")
+
+#MMB007.5
+jun <- read.csv("raw_data/temperature2021/MMB007.5 2021-06-18 14_26_58 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jun) <- c("date", "tempF")
+jun$date <- ymd_hms(jun$date)
+sep <- read_excel("raw_data/temperature2021/MMB007.5 2021-08-24 12_23_22 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+dat <- rbind(jun, sep)
+write.csv(dat, file = "raw_data/temperature2021/final/MMB007.csv")
+
+#PUB004
+jul <- read.csv("raw_data/temperature2021/PUB004 2021-07-17 11_51_33 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jul) <- c("date", "tempF")
+jul$date <- ymd_hms(jul$date)
+aug <- read_excel("raw_data/temperature2021/PUB004 2021-08-24 16_01_00 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(aug) <- c("date", "tempF")
+dat <- rbind(jul, aug)
+write.csv(dat, file = "raw_data/temperature2021/final/PUB004.csv")
+
+#PUB005
+jul <- read.csv("raw_data/temperature2021/PUB005 2021-07-17 09_55_23 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jul) <- c("date", "tempF")
+jul$date <- ymd_hms(jul$date)
+aug <- read_excel("raw_data/temperature2021/PUB005 2021-08-24 13_41_46 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(aug) <- c("date", "tempF")
+dat <- rbind(jul, aug)
+write.csv(dat, file = "raw_data/temperature2021/final/PUB005.csv")
+
+#GEB002
+dat <- read_excel("raw_data/temperature2021/GEB002 2021-08-31 11_23_11 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/GEB002.csv")
+
+#GEB003
+dat <- read_excel("raw_data/temperature2021/GEB003 replacement 2021-08-31 13_05_12 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/GEB003.csv")
+
+#MLB001
+dat <- read_excel("raw_data/temperature2021/MLB001 2021-08-30 11_15_36 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/MLB001.csv")
+
+#MLB005
+dat <- read_excel("raw_data/temperature2021/MLB005 2021-08-30 10_37_09 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/MLB005.csv")
+
+#THB001
+jun <- read_excel("raw_data/temperature2021/THB001 2021-06-19 11_10_04 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(jun) <- c("date", "tempF")
+jul <- read_excel("raw_data/temperature2021/THB001 2021-07-17 11_03_38 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(jul) <- c("date", "tempF")
+sep <- read_excel("raw_data/temperature2021/THB001 2021-09-03 12_13_25 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+dat <- rbind(jun, jul, sep)
+write.csv(dat, file = "raw_data/temperature2021/final/THB001.csv")
+
+#THBT01
+jun <- read_excel("raw_data/temperature2021/THBT01 2021-06-19 12_06_23 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(jun) <- c("date", "tempF")
+jul <- read_excel("raw_data/temperature2021/THBT01 2021-07-17 12_01_17 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(jul) <- c("date", "tempF")
+sep <- read_excel("raw_data/temperature2021/THBT01 2021-09-03 12_50_49 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+dat <- rbind(jun, jul, sep)
+write.csv(dat, file = "raw_data/temperature2021/final/THBT01.csv")
+
+#THB005 #this one is actually stored as THB006
+dat <- read_excel("raw_data/temperature2021/THB006 2021-08-20 12_56_32 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/THB005.csv")
+
+#THB006 #this one is actually stored as THB005
+dat <- read_excel("raw_data/temperature2021/THB005 2021-08-20 11_32_00 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/THB006.csv")
+
+#PTB001 
+dat <- read_excel("raw_data/temperature2021/PTB001 2021-08-31 15_31_01 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/PTB001.csv")
+
+#PTB004 
+dat <- read_excel("raw_data/temperature2021/PTB004 2021-08-30 10_42_28 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(dat) <- c("date", "tempF")
+write.csv(dat, file = "raw_data/temperature2021/final/PTB004.csv")
+
+#PTB005
+jun <- read.csv("raw_data/temperature2021/PTB005 2021-06-19 10_26_20 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jun) <- c("date", "tempF")
+jun$date <- ymd_hms(jun$date)
+jul <- read.csv("raw_data/temperature2021/PTB005 2021-07-16 10_26_38 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jul) <- c("date", "tempF")
+jul$date <- ymd_hms(jul$date)
+sep <- read_excel("raw_data/temperature2021/PTB005 2021-08-24 09_25_49 -0400.xlsx", skip = 96)%>% 
+  dplyr::select(2:3)
+names(sep) <- c("date", "tempF")
+dat <- rbind(jun, jul, sep)
+write.csv(dat, file = "raw_data/temperature2021/final/PTB005.csv")
+
+#PTB007
+jun <- read.csv("raw_data/temperature2021/PTB007 2021-06-19 11_06_23 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jun) <- c("date", "tempF")
+jun$date <- ymd_hms(jun$date)
+jul <- read.csv("raw_data/temperature2021/PTB007 2021-07-16 11_16_41 -0400.csv", skip = 96)%>% 
+  dplyr::select(1:2)
+names(jul) <- c("date", "tempF")
+jul$date <- ymd_hms(jul$date)
+dat <- rbind(jun, jul, sep)
+write.csv(dat, file = "raw_data/temperature2021/final/PTB007.csv")
 
 
-#manunally removed the erroneisou data at the start of THB005, THB006, BEB001, MLB001
-
-tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2021", sep = "/"), recursive = T, full.names = T)
-sites <- substr(tmpfiles, 142, 147)
 
 
-#this loop isnt working because the column names in the files starting at 18 are different....
+#read in new files and combine
+
+tmpfiles <- list.files(paste(getwd(),"raw_data/temperature2021/final", sep = "/"), recursive = T, full.names = T)
+sites <- substr(tmpfiles, 148, 153)
+
 
 temps21 <- NULL
 
 for (i in 1:length(tmpfiles)){
-  df <- read_excel(tmpfiles[i], skip = 1, sheet=1, col_names = TRUE) %>%  #well will skip the first three rows and just get the data
-    dplyr::select(contains(c("Date", "Temp"))) %>%
-    mutate(site = sites[i])
+  df <- read.csv(tmpfiles[i]) %>% 
+    mutate(site = sites[i]) %>% 
+    dplyr::select(site, date, tempF)
   
-  names(df)[1:2] <-  c("Date", "Temp_F")
   
   df <- df %>% 
-    mutate(Temp_C = (Temp_F - 32)*(5/9)) %>% 
-    dplyr::select(-Temp_F)
+    mutate(Temp_C = (tempF - 32)*(5/9)) %>% 
+    dplyr::select(-tempF) %>% 
+    dplyr::select(date, Temp_C, site) %>% 
+    rename(Date = date)
   
   temps21 <- rbind(temps21, df)
   
@@ -144,12 +295,10 @@ temps <- rbind(temps, temps21)
 
 
 
-ggplot(data = temps, mapping = aes(x = Date, y = Temp_C))+
+ggplot(data = temps[temps$site=="POB006",], mapping = aes(x = Date, y = Temp_C))+
   geom_line()+
   facet_wrap( ~ site, nrow = 5)
 
-
-temps$season <- ifelse(month(temps$Date)%in% c(3:5), "spring", "summer")
 
 temps <- temps %>% 
   filter(!is.na(Temp_C))
@@ -159,7 +308,8 @@ temps <- temps %>%
 metrics <- temps %>% 
   mutate(year = year(Date),
          month = month(Date),
-         day = day(Date)) %>% 
+         day = day(Date),
+         season = ifelse(month(temps$Date)%in% c(3:5), "spring", "summer")) %>% 
   group_by(site, year, month, day, season) %>% 
   summarise(dailyMax = max(Temp_C),
             dailyAvg = mean(Temp_C),
@@ -250,8 +400,8 @@ int <- temps %>%
   mutate(year = year(Date)) %>% 
   unite(yearsite, year, site, sep = "_") %>% 
   group_by(yearsite) %>% 
-  summarize(int = (Date[4] - Date[3])/60,
-            int2 = (Date[400] - Date[399])/60)
+  summarize(int = (Date[4] - Date[3]),
+            int2 = (Date[400] - Date[399]))
 
 min15 <- int$yearsite[int$int %in% c(0,15)]
 min10 <- int$yearsite[int$int == 10]
@@ -262,37 +412,30 @@ min10 <- int$yearsite[int$int == 10]
 
 
 duration <- temps  %>% 
-  mutate(year = year(Date)) %>%  
+  mutate(year = year(Date),
+         season = ifelse(month(temps$Date)%in% c(3:5), "spring", "summer")) %>%  
   unite(yearsite, year, site, sep = "_") %>%  
   group_by(yearsite, season) %>% 
   mutate(
-    wat_grt20 = ifelse(yearsite %in% min15, (sum(Temp_C>20)*15/60),
-                       ifelse (yearsite %in% min10, (sum(Temp_C>20)*10/60),
-                               (sum(Temp_C>20)/60)))
+    wat_grt20 = ifelse(yearsite %in% min15, (sum(Temp_C>20)*15/60), sum(Temp_C>20)*10/60)
   )
 
 
 duration <- duration %>% 
   group_by(yearsite, season) %>% 
   mutate(
-    wat_grt15 = ifelse(yearsite %in% min15, (sum(Temp_C>15)*15/60),
-                       ifelse (yearsite %in% min10, (sum(Temp_C>15)*10/60),
-                               (sum(Temp_C>15)/60)))
+    wat_grt15 = ifelse(yearsite %in% min15, (sum(Temp_C>15)*15/60), sum(Temp_C>15)*10/60)
   )
 
 duration <- duration %>% 
   group_by(yearsite, season) %>% 
   mutate(
-    wat_grt25 = ifelse(yearsite %in% min15, (sum(Temp_C>25)*15/60),
-                       ifelse (yearsite %in% min10, (sum(Temp_C>25)*10/60),
-                               (sum(Temp_C>25)/60)))
+    wat_grt25 = ifelse(yearsite %in% min15, (sum(Temp_C>25)*15/60), sum(Temp_C>25)*10/60)
   )
 duration <- duration %>% 
   group_by(yearsite, season) %>% 
   mutate(
-    wat_grt283 = ifelse(yearsite %in% min15, (sum(Temp_C>28.3)*15/60),
-                        ifelse (yearsite %in% min10, (sum(Temp_C>28.3)*10/60),
-                                (sum(Temp_C>28.3)/60)))
+    wat_grt283 = ifelse(yearsite %in% min15, (sum(Temp_C>28.3)*15/60), sum(Temp_C>28.3)*10/60)
   )
 
 
@@ -303,7 +446,7 @@ duration <- duration %>%
          month = month(Date),
          day = day(Date)) %>% 
   separate(yearsite, into = c("yeardelete", "site"), sep = "_") %>% 
-  select(-yeardelete) %>% 
+  dplyr::select(-yeardelete) %>% 
   filter(!is.na(Temp_C)) 
 
 
