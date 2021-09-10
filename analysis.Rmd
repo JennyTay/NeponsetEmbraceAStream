@@ -22,6 +22,7 @@ here we summarize the bio data
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
 bio$date <- ymd(bio$date)
 
+
 #what streams were sampled and when
 strms <- bio %>% 
   filter(source == "EAS") %>% 
@@ -32,13 +33,19 @@ strms <- bio %>%
   pivot_wider(names_from = season, values_from = count)
 write.csv(strms, file = "final_figs_tables/sites.csv")
 
-
-strms$stream <- gsub("([^A-Za-z])+", "", x = strms$site)
 unique(strms$stream) #"MLB"  "BEBT" "BEB"  "POB"  "THB"  "GEB"  "GEBT" "PUBT" "PUB"  "PTB"  "PTBT" "MMB"  "MMBT" "THBT"
 
 
-table(strms$stream, strms$season)
+#streams we identified with brook trout eDNA 
+edna <- bio %>% 
+  filter(source == "EAS",
+         occurrence == 1) %>% 
+  mutate(stream = substr(site,1,3)) 
+  
+unique(edna$stream)
 
+edna <- edna %>% 
+  group_by(season, site,)
 
 
 #what streams preiovusly had been identified as having 
@@ -56,7 +63,11 @@ dat <- dat %>%
 In this chunk, we describe the temperature data
 ```{r}
 
-load('StrnTemp_EAS_2020.RData')
+
+load('StrmTempMetrics_2020_2021.RData')
+
+load('StrnTemp_EAS_2020_2021.RData')
+
 temps <- temps %>% 
   mutate(year = year(Date)) %>% 
   group_by(site, year) %>% 
@@ -77,6 +88,16 @@ shapefile("culvert.shp")
 unique(final$Stream)
 
 ```
+In this chunk we describe the habitat data
+```{r}
+
+load("habitat.RData")
+load("DissolvedO2.RData")
+
+
+
+```
+
 
 Here we join the bio data with the temperature data and use a regression model to predict which sites should have trout based on temperature
 ```{r}

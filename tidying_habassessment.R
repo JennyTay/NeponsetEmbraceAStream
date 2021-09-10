@@ -63,21 +63,14 @@ dat$month <- month(dat$date)
 
 dat$wetted_width_m[dat$wetted_width_m == 99] <- NA
 
-#add a column for the number of unique habitat units per site and per stream
-dat <- dat %>% 
-  group_by(site) %>% 
-  mutate(complexity_site_num = n()) %>% 
-  ungroup() %>% 
-  mutate(stream = substr(site,1,3)) 
-# %>% 
-#   group_by(stream) %>% 
-#   mutate(complexity_strm_num = n()/length(unique(site))) %>% 
-#   ungroup()
+
+#save habitat data
+habitat <- dat
+save(habitat, file = "habitat.RData")
 
 
-test <- dat %>% 
-  dplyr::select(site, month) %>% 
-  unique()
+
+
 
 table(dat$vel)
 hist(dat$depth_cm, breaks = 40)
@@ -113,13 +106,29 @@ ggplot(data = dat, mapping = aes(x = as.factor(site), y = LWD))+
 
 df <- read.csv("raw_data/Form_1_0.csv")
 
+#delete duplicate BEB001 entry on Jun 9 (the entry on 4/30 is the correct one)
+df <- df[-26,]
+#delete duplicate GEB003 on June 22 (delete the one at 9:45)
+df <- df[-46,]
 
 dat <- df %>% 
   filter(!Creator == "neponset",
          !Crew.Names == "test2",
          !Crew.Names == "Test") %>% 
   mutate(site =  toupper(Site.ID),
-         site = str_trim(site, "both"))
+         site = str_trim(site, "both")) %>% 
+  separate(Date, into = c("date", "timedelete"), sep = " ") %>% 
+  mutate(date = mdy(date)) %>% 
+  dplyr::select(-timedelete, -Site.ID, - ï..ObjectID, -GlobalID) 
+
+names(dat)[1:13] <- c("date", "time", "stream", "location_desc", "crew", "start_position_m", "end_position_m", "temp_logger_position",
+                "DO_mgl", "DO_perc_sat", "Temp_C", "DO_calibration", "notes")
+
+dat <- dat %>% 
+  dplyr::select(site, location_desc, date, time, 5:20) %>% 
+  mutate(stream = substr(site,1,3)) 
+
+
 
 #fix site typos
 dat$site[dat$site == "MOB007.5"] <- "MMB007.5"
@@ -143,3 +152,6 @@ dat$date <- as.Date(ifelse(dat$site == "POB003" & dat$date == mdy("6/9/2021"), m
 
 #need t0 update month column with new dates
 dat$month <- month(dat$date)
+
+DissOxy <- dat
+save(DissOxy, file = "dissolvedO2.RData")

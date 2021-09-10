@@ -75,7 +75,7 @@ temps <- temps %>%
 ###### temperature 2021 #######
 
 #BEB001
-dat <- read_excel("raw_data/temperature2021/BEB001 2021-07-20 10_25_22 -0400.xlsx", skip = 96)%>% 
+dat <- read_excel("raw_data/temperature2021/BEB001 2021-09-08 13_44_49 -0400.xlsx", skip = 96)%>% 
   dplyr::select(2:3)
 names(dat) <- c("date", "tempF")
 write.csv(dat, file = "raw_data/temperature2021/final/BEB001.csv")
@@ -295,7 +295,7 @@ temps <- rbind(temps, temps21)
 
 
 
-ggplot(data = temps[temps$site=="POB006",], mapping = aes(x = Date, y = Temp_C))+
+ggplot(data = temps, mapping = aes(x = Date, y = Temp_C))+
   geom_line()+
   facet_wrap( ~ site, nrow = 5)
 
@@ -475,5 +475,5 @@ metrics <- test %>%
 save(metrics, file = 'StrmTempMetrics_2020_2021.RData')
 load('StrmTempMetrics_2020_2021.RData')
 
-save(temps, file = "StrnTemp_EAS_2020.RData")
-load('StrnTemp_EAS_2020.RData')
+save(temps, file = "StrnTemp_EAS_2020_2021.RData")
+load('StrnTemp_EAS_2020_2021.RData')
