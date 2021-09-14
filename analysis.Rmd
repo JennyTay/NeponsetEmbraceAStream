@@ -40,47 +40,29 @@ unique(strms$stream) #"MLB"  "BEBT" "BEB"  "POB"  "THB"  "GEB"  "GEBT" "PUBT" "P
 edna <- bio %>% 
   filter(source == "EAS",
          occurrence == 1) %>% 
-  mutate(stream = substr(site,1,3)) 
+  mutate(stream = substr(site,1,3)) %>% 
+  unique() #for some reason PTBT02 in spring has two records..
   
 unique(edna$stream)
 
 edna <- edna %>% 
-  group_by(season, site,)
+  data.frame() %>% 
+  dplyr::select(-geometry) %>% 
+  group_by(season, stream,) %>% 
+  summarise(count = n()) %>% 
+  pivot_wider(names_from = season, values_from = count)
+write.csv(edna, file = "final_figs_tables/positiveeDNA.csv")
 
 
-#what streams preiovusly had been identified as having 
+#what streams previously had been identified as having trout from mass wildlife
 
-dat <- dat %>% 
-  filter(cmmn_nm =="Brown Trout") %>% 
-  select(watrbdy, smpl_dt, cmmn_nm) %>% 
-  unique()
-
-
-
-```
-
-
-In this chunk, we describe the temperature data
-```{r}
-
-
-load('StrmTempMetrics_2020_2021.RData')
-
-load('StrnTemp_EAS_2020_2021.RData')
-
-temps <- temps %>% 
-  mutate(year = year(Date)) %>% 
-  group_by(site, year) %>% 
-  summarise(min = min(Date), 
-            max = max(Date)) %>% 
-  ungroup() %>% 
-  mutate(min = substr(min, 0, 10),
-         max = substr(max, 0, 10)) %>% 
-  unite(col = "range", min, max, sep = " - " ) %>% 
-  pivot_wider(names_from = year, values_from = range)
+dat <- bio %>% 
+  filter(source == "MassWildlife")
 
 
 ```
+
+
 
 We describe the culvert data
 ```{r}
@@ -101,7 +83,29 @@ load("DissolvedO2.RData")
 
 Here we join the bio data with the temperature data and use a regression model to predict which sites should have trout based on temperature
 ```{r}
+#first get the date range of each logger
+load('StrmTempMetrics_2020_2021.RData')
+load('StrnTemp_EAS_2020_2021.RData')
 
+temps <- temps %>% 
+  mutate(year = year(Date)) %>% 
+  group_by(site, year) %>% 
+  summarise(min = min(Date), 
+            max = max(Date)) %>% 
+  ungroup() %>% 
+  mutate(min = substr(min, 0, 10),
+         max = substr(max, 0, 10)) %>% 
+  unite(col = "range", min, max, sep = " - " ) %>% 
+  pivot_wider(names_from = year, values_from = range)
+
+
+#table of max7max
+m <- metrics %>% 
+  dplyr::select(site, season, max7max) %>% 
+  pivot_wider(values_from = max7max, names_from = season)
+
+
+#bind with bio data
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
 temp <- load("StrmTempMetrics_2020_2021.RData")
 
@@ -112,14 +116,20 @@ dat <- left_join(bio, metrics, by = c("site", "season")) %>%
 
 #correlations between temperature variables
 m <- data.frame(dat) %>% 
-  select(9:16)
+  dplyr::select(10:17)
 m <- cor(m)
 corrplot(m, type="upper", order="hclust", method = "number",
          col=brewer.pal(n=8, name="RdYlBu"))
 
 
-ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = grt283))+
-  geom_boxplot()
+ggplot(data = dat, mapping = aes())
+
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = grt20))+
+  geom_boxplot()+
+  facet_wrap(~season)
+
+ggplot(data = dat[dat$season == "spring",], aes(color = grt20))+
+  geom_sf()
 
 #binomial regression
 summary(glm(occurrence ~ max7max + grt283, family="binomial", data = dat))

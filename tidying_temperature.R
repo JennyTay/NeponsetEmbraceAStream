@@ -114,8 +114,8 @@ dat <- read_excel("raw_data/temperature2021/POB005 2021-09-01 08_38_42 -0400.xls
 names(dat) <- c("date", "tempF")
 write.csv(dat, file = "raw_data/temperature2021/final/POB005.csv")
 
-#POB006
-dat <- read_excel("raw_data/temperature2021/POB006 2021-08-30 12_16_01 -0400.xlsx", skip = 96)%>% 
+#POB006 - remove the first week
+dat <- read_excel("raw_data/temperature2021/POB006 2021-08-30 12_16_01 -0400.xlsx", skip = 416)%>% 
   dplyr::select(2:3)
 names(dat) <- c("date", "tempF")
 write.csv(dat, file = "raw_data/temperature2021/final/POB006.csv")

@@ -16,9 +16,10 @@ dat <- df %>%
          !Crew_HU == "test2",
          !HU.Comment..free.text. == "training, incomplete",
          !SiteID_HU == "GEB001") %>%  #only one visit and they only recorded one habitat unit - erroneously 
-  dplyr::select(c(3,5:21)) %>% 
+  dplyr::select(c(3:21)) %>% 
   separate(Date_HU, into = c("date", "time"), sep = " ") %>% 
-  mutate(date = mdy(date)) %>% 
+  mutate(date = mdy(date),
+         SiteID_HU = str_trim(SiteID_HU, "both")) %>% 
   dplyr::select(-time) %>% 
   mutate(depth_cm = ifelse(Depth.Max..nearest.0.01m.<=1.5, Depth.Max..nearest.0.01m.*100, 
                            ifelse(Depth.Max..nearest.0.01m. >1.5 & Depth.Max..nearest.0.01m. <=7, Depth.Max..nearest.0.01m.*10,
@@ -28,12 +29,12 @@ dat <- df %>%
          month = month(date)) %>% 
   dplyr::select(-Depth.Max..nearest.0.01m.) 
 
-names(dat)[2:17] <- c("site", "crew", "habitat", "start_position_m", "end_position_m", "length_m", "split_channel", "vel", 
+names(dat)[2:18] <- c("time", "site", "crew", "habitat", "start_position_m", "end_position_m", "length_m", "split_channel", "vel", 
                 "wetted_width_m", "pool_feature", "LWD", "dom_sub", "subdom_sub", "canopy_cov_perc", "instream_cov", "notes")
 
 #reorder columns so that site and date come first
 dat <- dat %>% 
-  dplyr::select(site, date, month, depth_cm, habitat:instream_cov, crew, notes )
+  dplyr::select(site, date, time, month, depth_cm, habitat:instream_cov, crew, notes )
 
 #fix site typos
 dat$site[dat$site == "MOB007.5"] <- "MMB007.5"
@@ -48,6 +49,7 @@ dat$site[dat$site == "BEB1"] <- "BEB001"
 dat$site[dat$site == "GEB 002"] <- "GEB002"
 
 dat$site <- ifelse(dat$date == mdy('6-21-2021') & dat$site == "PTB005", "PTB004", dat$site)
+dat$site <- ifelse(dat$date == mdy('8-24-2021') & dat$site == "PTB005" & dat$time %in% c("10:49", "10:52", "10:57"), "PTB007", dat$site)
 
 #fix date typos as described by Declan
 dat$date <- as.Date(ifelse(dat$site == "PTB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
@@ -142,6 +144,8 @@ dat$site[dat$site == "PTB 004"] <- "PTB004"
 dat$site[dat$site == "GEB 002"] <- "GEB002"
 
 dat$site <- ifelse(dat$date == mdy('6-21-2021') & dat$site == "PTB005", "PTB004", dat$site)
+dat$site <- ifelse(dat$date == mdy('8-24-2021') & dat$site == "PTB005" & dat$time == "10:48", "PTB007", dat$site)
+
 
 #fix date typos as described by Declan
 dat$date <- as.Date(ifelse(dat$site == "PTB001" & dat$date == mdy("6/9/2021"), mdy("4/30/2021"), dat$date), origin = "1970-01-01")
