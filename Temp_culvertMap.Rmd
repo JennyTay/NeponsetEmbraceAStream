@@ -1,0 +1,156 @@
+---
+title: "TemperatureMaps"
+author: "Jennifer Rogers"
+date: "9/14/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(ggspatial)
+library(RColorBrewer)
+```
+
+
+Load watershed features for map
+```{r}
+
+#load watershed
+wtrshd_bndry <- st_read("raw_data/watershed/IL_DWMWPP_WATERSHEDS_POLY.shp") %>% 
+  filter(DWM_NAME == "BOSTON HARBOR: Neponset")
+
+#load streams
+strms <- st_read("raw_data/watershed/IL_2016_ARC_NeponsetClip.shp")
+
+#load ponds
+pnds <- st_read("raw_data/watershed/IL_2016_POLY_NeponsetClip.shp")
+
+
+```
+
+
+
+```{r}
+
+#load bio data for spatial info
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio$year <- year(bio$date)
+
+#load temperature metrics
+load("StrmTempMetrics_2020_2021.RData") 
+metrics <- metrics %>% 
+  group_by(site, season) %>% 
+  summarise(max7avg = mean(max7avg),
+            grt20 = mean(grt20))
+
+#Left join
+tmppts <- left_join(bio, metrics, by = c("site", "season")) %>% 
+  filter(!is.na(site),
+         !is.na(max7avg)) 
+ 
+
+myPalette <- colorRampPalette(rev(brewer.pal(9, "RdYlBu")))
+
+ggplot() +
+  geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
+  geom_sf(data = strms, color = "deepskyblue2") +
+  geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
+  geom_sf(data = tmppts, aes(fill = max7avg), colour = "black", pch = 21, size = 4)+
+  scale_fill_gradientn(colours = myPalette(100), limits = c(min(tmppts$max7avg), max(tmppts$max7avg)))+
+   theme_bw() +
+  theme(panel.grid = element_line(colour = "transparent"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    strip.text.x = element_text(size = 14))+
+  facet_wrap(~season)+
+  labs(fill = "T (°C)")+
+  annotation_scale(location = "br", width_hint = 0.3, height = unit(.25, "cm"), text_cex = 1) +
+  annotation_north_arrow(location = "br", which_north = "true", 
+                        pad_x = unit(0.2, "in"), pad_y = unit(0.3, "in"),
+                        style = north_arrow_fancy_orienteering(text_size = 10),
+                        height = unit(1.5, "cm"), width = unit(1.5, "cm"))
+ggsave(plot = last_plot(), filename = "final_figs_tables/max7avg_map.png", width = 10, height = 6, units = "in", dpi = 300)
+
+
+```
+
+
+
+
+```{r}
+
+#add in culverts
+cvt <- st_read("culvert.shp")
+cvt <- cvt %>% 
+  filter(!is.na(Aqt_P_S))
+
+#filter out the "no barrier" amd the "insignificant barrier"
+cvtsig <- cvt %>% 
+  filter(Aqt_P_S %in% c("Significant Barrier", "Moderate Barrier", "Minor Barrier"))
+
+
+#plot of significant or moderate barriers
+ggplot() +
+  geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
+  geom_sf(data = strms, color = "deepskyblue2") +
+  geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
+  geom_sf(data = cvtsig, fill = "coral", pch = 21, colour = "black", size = 3)+
+   theme_bw() +
+  theme(panel.grid = element_line(colour = "transparent"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    strip.text.x = element_text(size = 14))+
+  facet_wrap(~Aqt_P_S)+
+  annotation_scale(location = "br", width_hint = 0.2, height = unit(.2, "cm"), text_cex = 1) +
+  annotation_north_arrow(location = "br", which_north = "true", 
+                        pad_x = unit(0.1, "in"), pad_y = unit(0.3, "in"),
+                        style = north_arrow_fancy_orienteering(text_size = 8),
+                        height = unit(1, "cm"), width = unit(1, "cm"))
+ggsave(plot = last_plot(), filename = "final_figs_tables/culvert_map.png", width = 8, height = 3, units = "in", dpi = 300)
+
+
+
+
+
+#Map of culverts with trout occurrence data shown
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio <- bio %>% 
+  filter(occurrence == 1)
+
+
+cvtsig$Aqt_P_S <- gsub(" Barrier", "", cvtsig$Aqt_P_S)
+
+#plot of significant or moderate barriers
+ggplot() +
+  geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
+  geom_sf(data = strms, color = "deepskyblue2") +
+  geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
+  geom_sf(data = cvtsig, aes(fill = Aqt_P_S), size = 7, pch = 21)+
+  scale_fill_manual(values= c("goldenrod2", "darkorange1", "red3"))+
+  geom_sf(data = bio, color = "black", fill = "green3", size = 4, pch = 21)+
+   theme_bw() +
+  theme(panel.grid = element_line(colour = "transparent"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    strip.text.x = element_text(size = 14),
+    legend.position = c(.2,.85))+
+  labs(fill = "Barrier Rating")+
+  annotation_scale(location = "br", width_hint = 0.2, height = unit(.2, "cm"), text_cex = 1) +
+  annotation_north_arrow(location = "br", which_north = "true", 
+                        pad_x = unit(0.1, "in"), pad_y = unit(0.3, "in"),
+                        style = north_arrow_fancy_orienteering(text_size = 8),
+                        height = unit(1, "cm"), width = unit(1, "cm"))
+ggsave(plot = last_plot(), filename = "final_figs_tables/culvert_bio_map.png", width = 8, height = 8, units = "in", dpi = 300)
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

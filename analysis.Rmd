@@ -66,15 +66,42 @@ dat <- bio %>%
 
 We describe the culvert data
 ```{r}
-shapefile("culvert.shp")
-unique(final$Stream)
+cvt <- shapefile("culvert.shp")
+unique(cvt$Stream)
+
+dat <- cvt %>%
+  data.frame() %>% 
+  group_by(Stream, Aqt_P_S) %>% 
+  summarise(count = n()) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = Aqt_P_S, values_from = count) %>% 
+  dplyr::select(1, 5,4,3,2,6)
+dat[is.na(dat)] <- 0
+write.csv(dat, file = "final_figs_tables/culvert_scores.csv")
+
 
 ```
 In this chunk we describe the habitat data
+
+
 ```{r}
 
 load("habitat.RData")
 load("DissolvedO2.RData")
+
+df <- habitat %>% 
+  group_by(site) %>% 
+  summarise(num = length(unique(month)))
+
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio$year <- year(bio$date)
+
+
+dat <- left_join(bio, habitat, by = c("site", "season", "year")) %>% 
+  filter(!is.na(site),
+         !is.na(max7max),
+         !is.na(date))
+
 
 
 
@@ -102,14 +129,37 @@ temps <- temps %>%
 #table of max7max
 m <- metrics %>% 
   dplyr::select(site, season, max7max) %>% 
-  pivot_wider(values_from = max7max, names_from = season)
+  pivot_wider(values_from = max7max, names_from = season) %>%
+  group_by(site) %>% #some sites had data from spring and summer for two years and we want the average
+  summarize(spring = round(mean(spring),2),
+         summer = round(mean(summer),2))%>% 
+  arrange(site)
+write.csv(m, file = "final_figs_tables/max7max.csv")
+
+ggplot(data = metrics, mapping = aes(x = site, y = max7avg, fill=season))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#00BA38", "#F8766D"))+
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 18),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA),
+        strip.text.x = element_text(size = 14))+
+  facet_wrap(~year, nrow = 2)+
+  geom_hline(yintercept = 20, color = "red", linetype = "dashed")+
+  labs(y = "Maximum 7-day average (°C)", x = "Site ID", fill ="Season")
+ggsave(plot = last_plot(), filename = "final_figs_tables/max7avg.png", width = 10, height = 6, units = "in", dpi = 300)
+
 
 
 #bind with bio data
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio$year <- year(bio$date)
 temp <- load("StrmTempMetrics_2020_2021.RData")
 
-dat <- left_join(bio, metrics, by = c("site", "season")) %>% 
+dat <- left_join(bio, metrics, by = c("site", "season", "year")) %>% 
   filter(!is.na(site),
          !is.na(max7max),
          !is.na(date))
