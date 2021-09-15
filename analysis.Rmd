@@ -69,6 +69,7 @@ We describe the culvert data
 cvt <- shapefile("culvert.shp")
 unique(cvt$Stream)
 
+#number of culverts by stream and severity
 dat <- cvt %>%
   data.frame() %>% 
   group_by(Stream, Aqt_P_S) %>% 
@@ -78,6 +79,17 @@ dat <- cvt %>%
   dplyr::select(1, 5,4,3,2,6)
 dat[is.na(dat)] <- 0
 write.csv(dat, file = "final_figs_tables/culvert_scores.csv")
+
+
+#list of culverts on eDNA positive streams
+rmv <- cvt %>% 
+  filter(Stream %in% c("Beaver Brook", "Germany Brook", "Ponkapoag Brook", "Pine Tree Brook", "Traphole Brook"),
+         Aqt_P_S %in% c("Significant Barrier", "Moderate Barrier", "Minor Barrier")) %>% 
+  dplyr::select("Twn_Cnt",  "Stream" ,  "Road", "Wgh_C_S", "Aqt_P_S") %>% 
+  arrange(Wgh_C_S) %>% 
+  unique()
+names(rmv) <- c("Town", "Stream", "Road Crossing", "Score", "Grade", "Location")
+write.csv(rmv, file = "final_figs_tables/priority culverts.csv")
 
 
 ```

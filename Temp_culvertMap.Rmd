@@ -27,6 +27,12 @@ strms <- st_read("raw_data/watershed/IL_2016_ARC_NeponsetClip.shp")
 #load ponds
 pnds <- st_read("raw_data/watershed/IL_2016_POLY_NeponsetClip.shp")
 
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio <- bio %>% 
+  filter(occurrence == 1,
+         source == "EAS")
+bio$season <- factor(bio$season, levels = c("summer", "spring"))
+
 
 ```
 
@@ -50,6 +56,7 @@ tmppts <- left_join(bio, metrics, by = c("site", "season")) %>%
   filter(!is.na(site),
          !is.na(max7avg)) 
  
+tmppts$season <- factor(tmppts$season, levels = c("summer", "spring"))
 
 myPalette <- colorRampPalette(rev(brewer.pal(9, "RdYlBu")))
 
@@ -74,6 +81,38 @@ ggplot() +
                         style = north_arrow_fancy_orienteering(text_size = 10),
                         height = unit(1.5, "cm"), width = unit(1.5, "cm"))
 ggsave(plot = last_plot(), filename = "final_figs_tables/max7avg_map.png", width = 10, height = 6, units = "in", dpi = 300)
+
+
+
+
+#remake plot with biological data
+
+tmppts$season <- factor(tmppts$season, levels = c("summer", "spring"))
+
+
+ggplot() +
+  geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
+  geom_sf(data = strms, color = "deepskyblue2") +
+  geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
+  geom_sf(data = tmppts, aes(fill = max7avg), colour = "black", pch = 21, size = 6)+
+  geom_sf(data = bio, color = "black", fill = "green3", size = 3, pch = 21)+
+  scale_fill_gradientn(colours = myPalette(100), limits = c(min(tmppts$max7avg), max(tmppts$max7avg)))+
+   theme_bw() +
+  theme(panel.grid = element_line(colour = "transparent"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    strip.text.x = element_text(size = 14))+
+  facet_wrap(~season)+
+  labs(fill = "T (°C)")+
+  annotation_scale(location = "br", width_hint = 0.3, height = unit(.25, "cm"), text_cex = 1) +
+  annotation_north_arrow(location = "br", which_north = "true", 
+                        pad_x = unit(0.2, "in"), pad_y = unit(0.3, "in"),
+                        style = north_arrow_fancy_orienteering(text_size = 10),
+                        height = unit(1.5, "cm"), width = unit(1.5, "cm"))
+ggsave(plot = last_plot(), filename = "final_figs_tables/max7avg_bio_map.png", width = 10, height = 6, units = "in", dpi = 300)
+
 
 
 ```
@@ -119,10 +158,6 @@ ggsave(plot = last_plot(), filename = "final_figs_tables/culvert_map.png", width
 
 
 #Map of culverts with trout occurrence data shown
-bio <- st_read("MassWildlife_EAS_combined_results.shp")
-bio <- bio %>% 
-  filter(occurrence == 1)
-
 
 cvtsig$Aqt_P_S <- gsub(" Barrier", "", cvtsig$Aqt_P_S)
 
@@ -152,5 +187,13 @@ ggsave(plot = last_plot(), filename = "final_figs_tables/culvert_bio_map.png", w
 
 
 ```
+
+
+
+```{r}
+
+
+
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
