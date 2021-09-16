@@ -101,9 +101,37 @@ In this chunk we describe the habitat data
 load("habitat.RData")
 load("DissolvedO2.RData")
 
-df <- habitat %>% 
+#table of how many months we got to each site
+hab <- habitat %>% 
+  dplyr::select(site, month) %>% 
+  unique() %>%
   group_by(site) %>% 
-  summarise(num = length(unique(month)))
+  summarize(count = n())
+
+
+#Average the measurements from each site each month
+hab <- habitat %>% 
+  group_by(site) %>% 
+  summarise(depth = max(depth_cm),
+            width = mean(wetted_width_m),
+            LWD = sum(LWD),
+            cover = max(canopy_cov_perc),
+            complexity_type = length(unique(habitat)),
+            complexity_num = length(habitat))
+hab$stream <- substring(hab$site, 1, 3)
+
+#plot depth by month for each site within a waterbody
+ggplot(data = habitat, mapping = aes(x =site, y = depth_cm))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 18),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA),
+        strip.text.x = element_text(size = 14))+
+  labs(y = "Maximum Depth (cm)", x = "Site")
 
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
 bio$year <- year(bio$date)
@@ -126,7 +154,7 @@ Here we join the bio data with the temperature data and use a regression model t
 load('StrmTempMetrics_2020_2021.RData')
 load('StrnTemp_EAS_2020_2021.RData')
 
-temps <- temps %>% 
+temps2 <- temps %>% 
   mutate(year = year(Date)) %>% 
   group_by(site, year) %>% 
   summarise(min = min(Date), 
@@ -136,6 +164,8 @@ temps <- temps %>%
          max = substr(max, 0, 10)) %>% 
   unite(col = "range", min, max, sep = " - " ) %>% 
   pivot_wider(names_from = year, values_from = range)
+
+temps$stream <- substr(temps$site, 1,3)
 
 
 #table of max7max
@@ -184,17 +214,56 @@ corrplot(m, type="upper", order="hclust", method = "number",
          col=brewer.pal(n=8, name="RdYlBu"))
 
 
-ggplot(data = dat, mapping = aes())
-
-ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = grt20))+
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = max7avg))+
   geom_boxplot()+
-  facet_wrap(~season)
+  facet_wrap(~season)+
+  theme(axis.text = element_text(size = 9),
+        axis.title = element_text(size = 10),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA),
+        strip.text.x = element_text(size = 10))+
+  facet_wrap(~season)+
+  labs(y = "Max. 7-day average (°C)", x = "Brook Trout Occurrence")
+ggsave(plot = last_plot(), filename = "final_figs_tables/occurrence_max7avg.png", width = 5, height = 3, units = "in", dpi = 300)
 
-ggplot(data = dat[dat$season == "spring",], aes(color = grt20))+
-  geom_sf()
+
+ggplot(data = dat, mapping = aes(x = max7avg, y = occurrence))+
+  geom_point()+
+  scale_color_manual(values = c("#00BA38", "#F8766D"))+
+  theme(axis.text = element_text(size = 9),
+        axis.title = element_text(size = 10),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA))+
+  labs(x = "Max. 7-day average (°C)", y = "Occurrence", color = "Season")+
+  geom_smooth(method = "glm", 
+    method.args = list(family = "binomial"), fullrange=TRUE)+
+  geom_hline(yintercept = 0.5, color = "red", linetype = "dashed")
+ggsave(plot = last_plot(), filename = "final_figs_tables/log_reg_max7avg.png", width = 5, height = 3, units = "in", dpi = 300)
 
 #binomial regression
-summary(glm(occurrence ~ max7max + grt283, family="binomial", data = dat))
+mdl <- summary(glm(occurrence ~ max7avg, family="binomial", data = dat))
+
+#get x value for P = 0.5
+(log(.5/(1-.5)) - coef(mdl)[1])/coef(mdl)[2]
+#18.8939
+
+#join to habitat data
+dat <- dat %>% 
+  left_join(hab, by = "site") %>% 
+  filter(!is.na(cover))
+
+#look at canopy cover and temeprature
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = depth))+
+  geom_boxplot()
+
+ggplot(data = dat, mapping = aes(x = max7avg, y = depth))+
+  geom_point()+
+  geom_smooth(method = "lm")
+
 
 
 
