@@ -7,7 +7,7 @@ library(raster)
 
 
 dat <- read_excel("raw_data/CulvertScoring.xlsx", sheet= 2) %>% 
-  select(1:32)
+  dplyr::select(1:32)
 
 #make this into a shapefile
 #read in the edna results so we can make the two the same crs

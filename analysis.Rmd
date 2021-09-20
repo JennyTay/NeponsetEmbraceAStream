@@ -168,26 +168,26 @@ ggplot(data = habitat, mapping = aes(x =date, y = DO_mgl))+
   geom_hline(yintercept = 6, color = "red", linetype = "dashed")
 ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDO.png", width = 10, height = 6, units = "in", dpi = 300)
 
-#plot deptj by month for each site within a waterbody
+#plot depth by month for each site within a waterbody
 hab <- habitat %>% 
   group_by(site, date) %>% 
-  summarise(depth = mean(depth_cm),
-            width = mean(wetted_width_m),
+  summarise(depth = min(depth_cm),
+            width = max(wetted_width_m),
             LWD = sum(LWD),
             cover = max(canopy_cov_perc))
 
 ggplot(data = hab, mapping = aes(x =date, y = depth))+
   geom_point()+
   geom_line()+
-  geom_s
+  geom_smooth(method = "lm", se = F, color = "red", linetype = "dashed")+
   theme(axis.text.x = element_text(angle = 90),
         axis.text = element_text(size = 13),
         axis.title = element_text(size = 18),
         panel.border = element_rect(color = "black", fill = NA),
         strip.text.x = element_text(size = 14))+
   facet_wrap(~site)+
-  labs(y = "Depth (mg/l)", x = "Date")
-ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDO.png", width = 10, height = 6, units = "in", dpi = 300)
+  labs(y = "Depth (cm)", x = "Date")
+ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDepthO.png", width = 10, height = 6, units = "in", dpi = 300)
 
 
 #table of sites with coarse dominant and subdominate substrate

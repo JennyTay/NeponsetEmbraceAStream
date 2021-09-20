@@ -198,7 +198,18 @@ Map of the dams
 #add in dams
 dams <- st_read("dams_ODS_nep_COMBINED.shp")
 dams <- dams %>% 
-  filter(dams$GNIS_Name %in% c("Pine Tree Brook", "Ponkapoag Brook", "Traphole Brook",  "Hawes Brook", "Bubbling Brook"))
+  filter(dams$GNIS_Name %in% c("Pine Tree Brook", "Ponkapoag Brook", "Traphole Brook") |
+           dams$FID_1 %in% c(4, 18, 83, 90, 100, 89, 10, 117)) 
+dams$Goal <-  c("connectivity", "headwaters", "connectivity", "mainstem", "connectivity", "connectivity", "mainstem", "streamflow", "connectivity", "headwaters", "mainstem", "headwaters", "mainstem", "streamflow", "streamflow", "mainstem")
+
+
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio <- bio %>% 
+  filter(source == "EAS",
+         !is.na(occurrence))%>% 
+  rename("Occurrence" = "occurrence")
+bio$Occurrence <- as.factor(bio$Occurrence)
+bio$season <- factor(bio$season, levels = c("summer", "spring"))
 
 
 #Map of dams with trout occurrence data shown
@@ -208,8 +219,9 @@ ggplot() +
   geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
   geom_sf(data = nhd, color = "deepskyblue2") +
   geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
-  geom_sf(data = dams, size = 3, pch = 22, color = "black", fill = "grey30")+
-  geom_sf(data = bio, color = "black", fill = "green3", size = 3, pch = 21)+
+  geom_sf(data = dams, size = 7, pch = 22, aes(fill = Goal))+ #color = "black", fill = "grey40")+
+  geom_sf(data = bio, size = 4, pch = 20, aes(color = Occurrence)) + #color = "black", fill = "green3")+
+  scale_colour_manual(values = c("red", "forestgreen"))+
    theme_bw() +
   theme(panel.grid = element_line(colour = "transparent"),
     axis.title = element_blank(),
