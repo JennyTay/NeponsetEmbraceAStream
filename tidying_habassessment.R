@@ -157,5 +157,8 @@ dat$date <- as.Date(ifelse(dat$site == "POB003" & dat$date == mdy("6/9/2021"), m
 #need t0 update month column with new dates
 dat$month <- month(dat$date)
 
+#fix temp
+dat$Temp_C <- ifelse(dat$Temp_C>40, ((dat$Temp_C-32)*(5/9)), dat$Temp_C)
+
 DissOxy <- dat
 save(DissOxy, file = "dissolvedO2.RData")

@@ -33,6 +33,9 @@ bio <- bio %>%
          source == "EAS")
 bio$season <- factor(bio$season, levels = c("summer", "spring"))
 
+#load NHD data
+nhd <- st_read("raw_data/NHD/NHD_Neponset_Crop.shp")
+
 
 ```
 
@@ -166,7 +169,7 @@ ggplot() +
   geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
   geom_sf(data = strms, color = "deepskyblue2") +
   geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
-  geom_sf(data = cvtsig, aes(fill = Aqt_P_S), size = 7, pch = 21)+
+  geom_sf(data = cvtsig, aes(fill = Aqt_P_S), size = 7, pch = 21) + 
   scale_fill_manual(values= c("goldenrod2", "darkorange1", "red3"))+
   geom_sf(data = bio, color = "black", fill = "green3", size = 4, pch = 21)+
    theme_bw() +
@@ -188,12 +191,40 @@ ggsave(plot = last_plot(), filename = "final_figs_tables/culvert_bio_map.png", w
 
 ```
 
-
+Map of the dams
 
 ```{r}
 
+#add in dams
+dams <- st_read("dams_ODS_nep_COMBINED.shp")
+dams <- dams %>% 
+  filter(dams$GNIS_Name %in% c("Pine Tree Brook", "Ponkapoag Brook", "Traphole Brook",  "Hawes Brook", "Bubbling Brook"))
 
 
+#Map of dams with trout occurrence data shown
 
+
+ggplot() +
+  geom_sf(data = wtrshd_bndry, fill = grey(0.4), alpha = 0.4, color = gray(.7), lwd = 1) +
+  geom_sf(data = nhd, color = "deepskyblue2") +
+  geom_sf(data = pnds, fill = "deepskyblue2", color = "deepskyblue2") +
+  geom_sf(data = dams, size = 3, pch = 22, color = "black", fill = "grey30")+
+  geom_sf(data = bio, color = "black", fill = "green3", size = 3, pch = 21)+
+   theme_bw() +
+  theme(panel.grid = element_line(colour = "transparent"),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 14),
+    strip.text.x = element_text(size = 14))+
+  annotation_scale(location = "br", width_hint = 0.2, height = unit(.2, "cm"), text_cex = 1) +
+  annotation_north_arrow(location = "br", which_north = "true", 
+                        pad_x = unit(0.1, "in"), pad_y = unit(0.3, "in"),
+                        style = north_arrow_fancy_orienteering(text_size = 8),
+                        height = unit(1, "cm"), width = unit(1, "cm"))
+ggsave(plot = last_plot(), filename = "final_figs_tables/dam_bio_map.png", width = 8, height = 8, units = "in", dpi = 300)
+
+
+```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -100,6 +100,11 @@ In this chunk we describe the habitat data
 
 load("habitat.RData")
 load("DissolvedO2.RData")
+DissOxy <- DissOxy %>% 
+  dplyr::select(site, date, DO_mgl, DO_perc_sat, Temp_C)
+habitat <- left_join(habitat, DissOxy, by = c("site", "date"))
+
+
 
 #table of how many months we got to each site
 hab <- habitat %>% 
@@ -109,7 +114,7 @@ hab <- habitat %>%
   summarize(count = n())
 
 
-#Average the measurements from each site each month
+#Average the measurements from each site 
 hab <- habitat %>% 
   group_by(site) %>% 
   summarise(depth = max(depth_cm),
@@ -117,21 +122,41 @@ hab <- habitat %>%
             LWD = sum(LWD),
             cover = max(canopy_cov_perc),
             complexity_type = length(unique(habitat)),
-            complexity_num = length(habitat))
+            complexity_num = length(habitat),
+            DO = mean(DO_mgl))
 hab$stream <- substring(hab$site, 1, 3)
 
 #plot depth by month for each site within a waterbody
-ggplot(data = habitat, mapping = aes(x =site, y = depth_cm))+
-  geom_boxplot()+
+ggplot(data = habitat, mapping = aes(x =date, y = DO_mgl))+
+  geom_point()+
+  geom_line()+
   theme(axis.text.x = element_text(angle = 90),
         axis.text = element_text(size = 13),
         axis.title = element_text(size = 18),
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
         panel.border = element_rect(color = "black", fill = NA),
         strip.text.x = element_text(size = 14))+
-  labs(y = "Maximum Depth (cm)", x = "Site")
+  facet_wrap(~site)+
+  labs(y = "Dissolved Oxygen (mg/l)", x = "Date")+
+  geom_hline(yintercept = 6, color = "red", linetype = "dashed")
+ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDO.png", width = 10, height = 6, units = "in", dpi = 300)
+
+
+#table of sites with coarse dominant and subdominate substrate
+df <- habitat %>% 
+  filter(dom_sub %in% c("gravel", "cobble") & subdom_sub %in% c("gravel", "cobble", "boulder"))
+unique(df$site)
+
+df <- habitat %>% 
+  filter(habitat == "riffle")
+unique(df$site)
+
+
+
+
+ggplot(habitat[habitat$month == 6,], aes(x=habitat)) + 
+    geom_bar()+
+  facet_wrap(~site)
+
 
 bio <- st_read("MassWildlife_EAS_combined_results.shp")
 bio$year <- year(bio$date)
@@ -238,7 +263,7 @@ ggplot(data = dat, mapping = aes(x = max7avg, y = occurrence))+
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_rect(color = "black", fill = NA))+
-  labs(x = "Max. 7-day average (°C)", y = "Occurrence", color = "Season")+
+  labs(x = "Max. 7-day average (°C)", y = "Probability of Occurrence", color = "Season")+
   geom_smooth(method = "glm", 
     method.args = list(family = "binomial"), fullrange=TRUE)+
   geom_hline(yintercept = 0.5, color = "red", linetype = "dashed")
@@ -257,7 +282,7 @@ dat <- dat %>%
   filter(!is.na(cover))
 
 #look at canopy cover and temeprature
-ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = depth))+
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = complexity_num))+
   geom_boxplot()
 
 ggplot(data = dat, mapping = aes(x = max7avg, y = depth))+
