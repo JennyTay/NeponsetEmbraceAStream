@@ -93,6 +93,20 @@ write.csv(rmv, file = "final_figs_tables/priority culverts.csv")
 
 
 ```
+In this chunk of code we describe the dam data
+```{r}
+dams <- st_read("dams_ODS_nep_COMBINED.shp")
+cld <- dams %>% 
+  filter(GNIS_Name %in% c("Beaver Brook", "Mine Brook", "Pine Tree Brook", 
+                               "Mill Brook", "Neponset River", "Purgatory Brook", 
+                               "Ponkapoag Brook", "Traphole Brook", "East Branch Neponset River", 
+                               "Massapoag Brook", "Hawes Brook", "Bubbling Brook")) %>% 
+  group_by(GNIS_Name) %>% 
+  summarise(count = n())
+write.csv(cld, file = "final_figs_tables/dam_count.csv")
+
+
+```
 In this chunk we describe the habitat data
 
 
@@ -117,16 +131,30 @@ hab <- habitat %>%
 #Average the measurements from each site 
 hab <- habitat %>% 
   group_by(site) %>% 
-  summarise(depth = max(depth_cm),
-            width = mean(wetted_width_m),
-            LWD = sum(LWD),
-            cover = max(canopy_cov_perc),
-            complexity_type = length(unique(habitat)),
-            complexity_num = length(habitat),
-            DO = mean(DO_mgl))
+  summarise(complexity_type = length(unique(habitat)),
+            complexity_num = length(habitat)/length(unique(date)),
+            LWD = sum(LWD, na.rm = T)/length(unique(date)))
 hab$stream <- substring(hab$site, 1, 3)
 
-#plot depth by month for each site within a waterbody
+
+ggplot(hab, aes(x=site, y = complexity_num)) + 
+    geom_bar(stat = "identity", color="black", fill="grey40")+
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 18))+
+  labs(x = "Site", y = "Habitat Units per 100m")
+ggsave(plot = last_plot(), filename = "final_figs_tables/HabUnits.png", width = 10, height = 6, units = "in", dpi = 300)
+
+ggplot(hab, aes(x=site, y = LWD)) + 
+    geom_bar(stat = "identity", color="black", fill="grey40")+
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 18))+
+  labs(x = "Site", y = "LWD per 100m")
+ggsave(plot = last_plot(), filename = "final_figs_tables/LWD.png", width = 10, height = 6, units = "in", dpi = 300)
+
+
+#plot DO by month for each site within a waterbody
 ggplot(data = habitat, mapping = aes(x =date, y = DO_mgl))+
   geom_point()+
   geom_line()+
@@ -140,6 +168,27 @@ ggplot(data = habitat, mapping = aes(x =date, y = DO_mgl))+
   geom_hline(yintercept = 6, color = "red", linetype = "dashed")
 ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDO.png", width = 10, height = 6, units = "in", dpi = 300)
 
+#plot deptj by month for each site within a waterbody
+hab <- habitat %>% 
+  group_by(site, date) %>% 
+  summarise(depth = mean(depth_cm),
+            width = mean(wetted_width_m),
+            LWD = sum(LWD),
+            cover = max(canopy_cov_perc))
+
+ggplot(data = hab, mapping = aes(x =date, y = depth))+
+  geom_point()+
+  geom_line()+
+  geom_s
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text = element_text(size = 13),
+        axis.title = element_text(size = 18),
+        panel.border = element_rect(color = "black", fill = NA),
+        strip.text.x = element_text(size = 14))+
+  facet_wrap(~site)+
+  labs(y = "Depth (mg/l)", x = "Date")
+ggsave(plot = last_plot(), filename = "final_figs_tables/MnthlyDO.png", width = 10, height = 6, units = "in", dpi = 300)
+
 
 #table of sites with coarse dominant and subdominate substrate
 df <- habitat %>% 
@@ -150,12 +199,6 @@ df <- habitat %>%
   filter(habitat == "riffle")
 unique(df$site)
 
-
-
-
-ggplot(habitat[habitat$month == 6,], aes(x=habitat)) + 
-    geom_bar()+
-  facet_wrap(~site)
 
 
 bio <- st_read("MassWildlife_EAS_combined_results.shp")

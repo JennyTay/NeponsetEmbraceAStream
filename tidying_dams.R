@@ -34,7 +34,7 @@ shapefile(dams, file = "dams_ODS_nep_COMBINED.shp", overwrite = TRUE)
 
 dams <- st_read("raw_data/dams/Neprwa_ODS_COMBINED_NHD.shp")
 dams <- dams %>% 
-  dplyr::select(-(15:31)) %>% 
+  dplyr::select(-(22:31)) %>% 
   filter(Distance <300) #remove ones that are not on a NHD stream line
 dams <- as(dams, "Spatial")
 shapefile(dams, file = "dams_ODS_nep_COMBINED.shp", overwrite = TRUE)
