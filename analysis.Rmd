@@ -282,7 +282,7 @@ corrplot(m, type="upper", order="hclust", method = "number",
          col=brewer.pal(n=8, name="RdYlBu"))
 
 
-ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = max7avg))+
+ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = avg7max))+
   geom_boxplot()+
   facet_wrap(~season)+
   theme(axis.text = element_text(size = 9),
@@ -292,12 +292,15 @@ ggplot(data = dat, mapping = aes(x = as.factor(occurrence), y = max7avg))+
         panel.background = element_blank(),
         panel.border = element_rect(color = "black", fill = NA),
         strip.text.x = element_text(size = 10))+
+  scale_y_continuous(limits = c(14, 30), breaks = seq(14, 30, by = 2))+
   facet_wrap(~season)+
-  labs(y = "Max. 7-day average (°C)", x = "Brook Trout Occurrence")
-ggsave(plot = last_plot(), filename = "final_figs_tables/occurrence_max7avg.png", width = 5, height = 3, units = "in", dpi = 300)
+  geom_hline(yintercept = 20, color = "blue", linetype = "dashed")+
+  geom_hline(yintercept = 28.3, color = "red", linetype = "dashed")+
+  labs(y = "Avg. 7-day maximum (°C)", x = "Brook Trout Occurrence")
+ggsave(plot = last_plot(), filename = "final_figs_tables/occurrence_avg7max.png", width = 5, height = 3, units = "in", dpi = 300)
 
 
-ggplot(data = dat, mapping = aes(x = max7avg, y = occurrence))+
+ggplot(data = dat, mapping = aes(x = avg7max, y = occurrence))+
   geom_point()+
   scale_color_manual(values = c("#00BA38", "#F8766D"))+
   theme(axis.text = element_text(size = 9),
@@ -306,18 +309,32 @@ ggplot(data = dat, mapping = aes(x = max7avg, y = occurrence))+
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         panel.border = element_rect(color = "black", fill = NA))+
-  labs(x = "Max. 7-day average (°C)", y = "Probability of Occurrence", color = "Season")+
+  labs(x = "Avg. 7-day maximum (°C)", y = "Probability of Occurrence", color = "Season")+
   geom_smooth(method = "glm", 
     method.args = list(family = "binomial"), fullrange=TRUE)+
-  geom_hline(yintercept = 0.5, color = "red", linetype = "dashed")
-ggsave(plot = last_plot(), filename = "final_figs_tables/log_reg_max7avg.png", width = 5, height = 3, units = "in", dpi = 300)
+  geom_hline(yintercept = 0.5, color = "red", linetype = "dashed")+
+  geom_vline(xintercept = 20.63704, color = "red", linetype = "dashed")+
+  geom_hline(yintercept = 0.75, color = "blue", linetype = "dashed")+
+  geom_vline(xintercept = 17.72593, color = "blue", linetype = "dashed")
+ggsave(plot = last_plot(), filename = "final_figs_tables/log_reg_avg7max.png", width = 5, height = 3, units = "in", dpi = 300)
 
 #binomial regression
-mdl <- summary(glm(occurrence ~ max7avg, family="binomial", data = dat))
+mdl <- summary(glm(occurrence ~ avg7max, family="binomial", data = dat))
 
 #get x value for P = 0.5
 (log(.5/(1-.5)) - coef(mdl)[1])/coef(mdl)[2]
-#18.8939
+#20.63704
+(log(.75/(1-.75)) - coef(mdl)[1])/coef(mdl)[2]
+# 17.72593
+
+#make table of sites and days greater than 20
+df <- dat %>% 
+  data.frame() %>% 
+  dplyr::select(site, season, grt20) %>% 
+  mutate(grt20 = round(grt20/24,2)) %>% 
+  pivot_wider(names_from = season, values_from = grt20) %>% 
+  arrange(desc(summer))
+write.csv(df, file = "final_figs_tables/daysgrt20.csv")
 
 #join to habitat data
 dat <- dat %>% 

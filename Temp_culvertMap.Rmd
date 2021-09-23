@@ -134,6 +134,11 @@ cvt <- cvt %>%
 cvtsig <- cvt %>% 
   filter(Aqt_P_S %in% c("Significant Barrier", "Moderate Barrier", "Minor Barrier"))
 
+bio <- st_read("MassWildlife_EAS_combined_results.shp")
+bio <- bio %>% 
+  filter(occurrence == 1)
+bio$season <- factor(bio$season, levels = c("summer", "spring"))
+
 
 #plot of significant or moderate barriers
 ggplot() +
@@ -199,8 +204,8 @@ Map of the dams
 dams <- st_read("dams_ODS_nep_COMBINED.shp")
 dams <- dams %>% 
   filter(dams$GNIS_Name %in% c("Pine Tree Brook", "Ponkapoag Brook", "Traphole Brook") |
-           dams$FID_1 %in% c(4, 18, 83, 90, 100, 89, 10, 117)) 
-dams$Goal <-  c("connectivity", "headwaters", "connectivity", "mainstem", "connectivity", "connectivity", "mainstem", "streamflow", "connectivity", "headwaters", "mainstem", "headwaters", "mainstem", "streamflow", "streamflow", "mainstem")
+           dams$FID_1 %in% c(4, 18, 83, 90, 100, 89, 117)) 
+dams$Goal <-  c("Connectivity", "Headwaters", "Connectivity", "Mainstem", "Connectivity", "Connectivity", "Mainstem", "Connectivity", "Headwaters", "Mainstem", "Flow restoration", "Connectivity", "Flow restoration", "Flow restoration", "Mainstem")
 
 
 bio <- st_read("MassWildlife_EAS_combined_results.shp")

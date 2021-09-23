@@ -9,6 +9,9 @@ library(raster)
 dat <- read_excel("raw_data/CulvertScoring.xlsx", sheet= 2) %>% 
   dplyr::select(1:32)
 
+#edit a couple
+dat$`Aquatic Passability Score`[dat$`Local ID` == "PUB005"] <- "Significant Barrier" #the score did not account for the very large inlet drop
+
 #make this into a shapefile
 #read in the edna results so we can make the two the same crs
 edna <- st_read("eDNA_results.shp")

@@ -36,6 +36,14 @@ final <- as(dat2, "Spatial")
 shapefile(final, file = "MassWildlife_results.shp", overwrite = TRUE)
 
 
+#streams with brown trout
+df <- dat %>% 
+  filter(common_name == "Brown Trout") %>% 
+  dplyr::select(common_name, sample_date, waterbody) %>% 
+  unique()
+unique(df$waterbody)
+unique(df$sample_date)
+
 
 
 
